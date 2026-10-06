@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#075A36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="assets/tmo-app-icon.jpg">
+<title>TMO Admin Dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="tmo-store.js"></script>
+<style>body{margin:0;background:#F4F6F3;font-family:Urbanist,sans-serif;color:#17251B;-webkit-font-smoothing:antialiased}a{color:#075A36;font-weight:600;text-decoration:none}a:hover{color:#3DBE72}*{box-sizing:border-box}input,button,select{font-family:Urbanist}input::placeholder{color:#8A968D}</style>
+</helmet>
+<sc-if value="{{ notAuthed }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+  <div style="background:#075A36;color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;gap:40px;min-height:300px">
+    <img src="assets/logo-full.png" alt="TMO Logistics" style="width:150px">
+    <div style="display:flex;flex-direction:column;gap:12px;max-width:440px"><span style="font-size:12px;font-weight:800;letter-spacing:.12em;color:#3DBE72">OPERATIONS CONSOLE</span><span style="font-size:38px;font-weight:800;letter-spacing:-.02em;line-height:1.1">Every shipment, rate and naira — live.</span><span style="font-size:16px;color:#C6E9D3;line-height:1.5">Authorised TMO staff only. Activity is logged to the audit trail.</span></div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:center;padding:48px 24px;background:#fff">
+    <div style="width:100%;max-width:380px;display:flex;flex-direction:column;gap:16px">
+      <sc-if value="{{ auth.login }}" hint-placeholder-val="{{ true }}">
+        <span style="font-size:30px;font-weight:800">Sign in</span>
+        <input value="{{ f.email }}" onInput="{{ on.email }}" placeholder="Work email" style="height:50px;border:1.5px solid #E2E7E1;border-radius:14px;padding:0 16px;font-size:16px;font-weight:600;outline:none">
+        <input type="password" value="{{ f.pw }}" onInput="{{ on.pw }}" placeholder="Password" style="height:50px;border:1.5px solid #E2E7E1;border-radius:14px;padding:0 16px;font-size:16px;font-weight:600;outline:none">
+        <span style="font-size:13px;font-weight:700;color:#C8412F">{{ err }}</span>
+        <button onClick="{{ submitLogin }}" style="height:52px;border:0;border-radius:14px;background:#075A36;color:#fff;font-weight:800;font-size:16px;cursor:pointer">Continue</button>
+        <span style="font-size:13px;color:#8A968D;text-align:center">Testing: any email and password work.</span>
+      </sc-if>
+      <sc-if value="{{ auth.mfa }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:30px;font-weight:800">Two-step verification</span><span style="font-size:15px;color:#5C6B60">Enter the 6-digit code from your authenticator. Any 6 digits work in testing.</span>
+        <input value="{{ f.mfa }}" onInput="{{ on.mfa }}" placeholder="000000" style="height:60px;border:1.5px solid #E2E7E1;border-radius:14px;padding:0 16px;font-size:28px;font-weight:700;letter-spacing:.4em;font-family:'IBM Plex Mono';outline:none;text-align:center">
+        <button onClick="{{ submitMfa }}" style="height:52px;border:0;border-radius:14px;font-weight:800;font-size:16px;cursor:pointer;background:{{ mfaCta.bg }};color:{{ mfaCta.fg }}">Verify</button>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ authed }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;display:flex;flex-wrap:wrap">
+  <nav style="width:236px;flex:1 1 236px;max-width:100%;background:#17251B;color:#fff;padding:24px 16px;display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:10px;padding:0 8px"><img src="assets/logo-full.png" alt="TMO Logistics" style="width:118px"><span style="font-size:12px;font-weight:800;letter-spacing:.1em;color:#3DBE72;display:flex;gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#3DBE72"></span>LIVE OPERATIONS</span></div>
+    <div style="display:flex;flex-direction:column;gap:4px"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><button onClick="{{ n.go }}" style="border:0;text-align:left;cursor:pointer;height:44px;padding:0 12px;border-radius:12px;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center;background:{{ n.bg }};color:{{ n.fg }}">{{ n.l }}<span style="font-size:12px;padding:2px 7px;border-radius:999px;background:{{ n.bb }};color:#17251B">{{ n.badge }}</span></button></sc-for></div>
+    <div style="margin-top:auto;padding:0 8px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#8A968D"><span>{{ who }}</span><button onClick="{{ signOut }}" style="border:0;background:none;color:#fff;font-weight:700;font-size:13px;cursor:pointer;padding:0;text-align:left">Sign out</button><button onClick="{{ resetAll }}" style="border:0;background:none;color:#F9D44B;font-weight:700;font-size:13px;cursor:pointer;padding:0;text-align:left">{{ resetLabel }}</button><sc-if value="{{ showLinks }}" hint-placeholder-val="{{ true }}"><a href="TMO Test Console.dc.html" style="color:#3DBE72">Test Console →</a></sc-if></div>
+  </nav>
+
+  <main style="flex:999 1 600px;min-width:0;padding:28px 32px 64px;display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;font-weight:700;color:#5C6B60">Phase 1 · CMS network · updates live from every app</span><h1 style="margin:0;font-size:32px;font-weight:800;letter-spacing:-.02em">{{ title }}</h1></div>
+
+    <sc-if value="{{ is.overview }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px"><sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6"><div style="background:#fff;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:6px;border:1px solid #E2E7E1"><span style="font-size:13px;font-weight:700;color:#5C6B60">{{ k.l }}</span><span style="font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1">{{ k.v }}</span><span style="font-size:13px;font-weight:600;color:#5C6B60">{{ k.s }}</span></div></sc-for></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px;align-items:start">
+        <div style="background:#fff;border-radius:20px;padding:20px;border:1px solid #E2E7E1;display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><b style="font-size:17px">Live activity</b><button onClick="{{ toActivity }}" style="border:0;background:none;color:#075A36;font-weight:700;font-size:13px;cursor:pointer">View all</button></div>
+          <sc-for list="{{ feed }}" as="a" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:9px 0;border-top:1px solid #F0F2EF;align-items:start"><span style="font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 6px;border-radius:5px;background:{{ a.rb }};color:{{ a.rf }}">{{ a.role }}</span><span style="font-size:14px;line-height:1.4"><b>{{ a.actor }}</b> {{ a.text }}</span><span style="font-size:12px;color:#8A968D;white-space:nowrap">{{ a.t }}</span></div></sc-for>
+        </div>
+        <div style="background:#fff;border-radius:20px;padding:20px;border:1px solid #E2E7E1;display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><b style="font-size:17px">Needs attention</b><span style="padding:4px 10px;border-radius:999px;background:{{ attnBg }};color:{{ attnFg }};font-size:12px;font-weight:800">{{ attnCount }} open</span></div>
+          <sc-if value="{{ noAttn }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:#5C6B60;padding:8px 0">All clear.</span></sc-if>
+          <sc-for list="{{ attn }}" as="x" hint-placeholder-count="3"><button onClick="{{ x.go }}" style="border:0;background:none;text-align:left;cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid #E2E7E1"><span style="width:8px;height:8px;border-radius:50%;margin-top:7px;flex:none;background:{{ x.c }}"></span><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-weight:700;font-size:15px;color:#17251B">{{ x.t }}</span><span style="font-size:13px;color:#5C6B60">{{ x.s }}</span></div><span style="font-family:'IBM Plex Mono';font-size:12px;color:#5C6B60">{{ x.code }}</span></button></sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ is.shipments }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><sc-for list="{{ filters }}" as="f" hint-placeholder-count="6"><button onClick="{{ f.go }}" style="height:36px;padding:0 12px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;border:1.5px solid {{ f.bd }};background:{{ f.bg }};color:{{ f.fg }}">{{ f.l }}</button></sc-for><input value="{{ q }}" onInput="{{ onQ }}" placeholder="Search waybill, name, phone" style="margin-left:auto;height:40px;min-width:220px;border:1.5px solid #E2E7E1;border-radius:12px;padding:0 14px;font-size:14px;font-weight:600;outline:none;background:#fff"></div>
+      <div style="background:#fff;border-radius:20px;border:1px solid #E2E7E1;overflow-x:auto"><div style="min-width:900px">
+        <div style="display:grid;grid-template-columns:130px 1.2fr 1.3fr 80px 90px 100px 1fr 130px;gap:12px;padding:14px 20px;font-size:12px;font-weight:800;letter-spacing:.06em;color:#5C6B60;border-bottom:1px solid #E2E7E1"><span>WAYBILL</span><span>SENDER → RECEIVER</span><span>ROUTE</span><span>KG</span><span>CHANNEL</span><span>PRICE</span><span>DRIVER</span><span>STATUS</span></div>
+        <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><div style="padding:24px 20px;color:#5C6B60;font-size:15px">No shipments yet. Create one from the Customer or Officer app — it appears here instantly.</div></sc-if>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5"><button onClick="{{ r.open }}" style="width:100%;border:0;background:#fff;text-align:left;cursor:pointer;display:grid;grid-template-columns:130px 1.2fr 1.3fr 80px 90px 100px 1fr 130px;gap:12px;padding:12px 20px;font-size:14px;border-bottom:1px solid #F0F2EF;align-items:center;color:#17251B"><span style="font-family:'IBM Plex Mono';font-size:13px;font-weight:600">{{ r.code }}</span><span><b>{{ r.sender }}</b> → {{ r.recv }}</span><span>{{ r.route }}</span><span>{{ r.kg }}</span><span style="color:#5C6B60;font-weight:600">{{ r.ch }}</span><span style="font-weight:700">{{ r.price }}</span><span>{{ r.driver }}</span><span><span style="padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;background:{{ r.bg }};color:{{ r.fg }}">{{ r.status }}</span></span></button></sc-for>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{ is.people }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><sc-for list="{{ roleFilters }}" as="f" hint-placeholder-count="5"><button onClick="{{ f.go }}" style="height:36px;padding:0 12px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;border:1.5px solid {{ f.bd }};background:{{ f.bg }};color:{{ f.fg }}">{{ f.l }}</button></sc-for><button onClick="{{ openInvite }}" style="margin-left:auto;height:42px;padding:0 18px;border:0;border-radius:12px;background:#075A36;color:#fff;font-weight:800;font-size:14px;cursor:pointer">+ Invite staff</button></div>
+      <div style="background:#fff;border-radius:20px;border:1px solid #E2E7E1;overflow-x:auto"><div style="min-width:820px">
+        <div style="display:grid;grid-template-columns:1.3fr 100px 140px 1.3fr 1fr 110px 190px;gap:12px;padding:14px 20px;font-size:12px;font-weight:800;letter-spacing:.06em;color:#5C6B60;border-bottom:1px solid #E2E7E1"><span>NAME</span><span>ROLE</span><span>PHONE</span><span>DETAIL</span><span>ACTIVITY</span><span>STATUS</span><span></span></div>
+        <sc-for list="{{ people }}" as="p" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:1.3fr 100px 140px 1.3fr 1fr 110px 190px;gap:12px;padding:12px 20px;font-size:14px;border-bottom:1px solid #F0F2EF;align-items:center"><b>{{ p.name }}</b><span style="color:#5C6B60;font-weight:600;text-transform:capitalize">{{ p.role }}</span><span style="font-family:'IBM Plex Mono';font-size:13px">{{ p.phone }}</span><span>{{ p.detail }}</span><span style="color:#5C6B60">{{ p.act }}</span><span><span style="padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;background:{{ p.bg }};color:{{ p.fg }}">{{ p.st }}</span></span><div style="display:flex;gap:6px"><sc-for list="{{ p.btns }}" as="b" hint-placeholder-count="0"><button onClick="{{ b.go }}" style="height:34px;padding:0 12px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;border:1.5px solid {{ b.bd }};background:{{ b.bg }};color:{{ b.fg }}">{{ b.l }}</button></sc-for></div></div></sc-for>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{ is.pricing }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px;align-items:start">
+        <div style="background:#fff;border-radius:20px;padding:22px;border:1px solid #E2E7E1;display:flex;flex-direction:column;gap:12px">
+          <b style="font-size:17px">Rates</b>
+          <sc-for list="{{ rateRows }}" as="r" hint-placeholder-count="12"><div style="display:grid;grid-template-columns:1fr 140px;gap:12px;align-items:center"><span style="font-weight:700;font-size:14px">{{ r.l }}</span><div style="height:42px;border:1.5px solid #E2E7E1;border-radius:12px;display:flex;align-items:center;padding:0 12px;gap:6px"><span style="color:#5C6B60;font-weight:700">{{ r.u }}</span><input value="{{ r.v }}" onInput="{{ r.on }}" style="flex:1;min-width:0;border:0;outline:none;font-size:15px;font-weight:700"></div></div></sc-for>
+        </div>
+        <div style="background:#075A36;color:#fff;border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px">
+          <span style="font-size:12px;font-weight:800;letter-spacing:.1em;color:#C6E9D3">PREVIEW · 4 KG · ZONE B · ₦50,000 DECLARED</span>
+          <div style="background:#fff;color:#17251B;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;font-size:14px"><sc-for list="{{ pv.lines }}" as="l" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between"><span style="color:#5C6B60">{{ l.k }}</span><b>{{ l.v }}</b></div></sc-for><div style="height:1px;background:#E2E7E1"></div><div style="display:flex;justify-content:space-between;align-items:baseline"><b>Customer pays</b><span style="font-size:26px;font-weight:800">{{ pv.total }}</span></div></div>
+          <button onClick="{{ publish }}" style="height:50px;border:0;border-radius:14px;background:#F9D44B;color:#17251B;font-weight:800;font-size:15px;cursor:pointer">{{ publishLabel }}</button>
+          <span style="font-size:13px;color:#C6E9D3;line-height:1.45">Publishing updates prices in the Customer and Officer apps immediately. Existing shipments keep their price.</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ is.payments }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px"><sc-for list="{{ payKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border-radius:18px;padding:18px;border:1px solid #E2E7E1;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:700;color:#5C6B60">{{ k.l }}</span><span style="font-size:28px;font-weight:800">{{ k.v }}</span></div></sc-for></div>
+      <div style="background:#fff;border-radius:20px;border:1px solid #E2E7E1;overflow-x:auto"><div style="min-width:700px">
+        <div style="display:grid;grid-template-columns:90px 140px 1.4fr 1fr 1fr 110px;gap:12px;padding:14px 20px;font-size:12px;font-weight:800;letter-spacing:.06em;color:#5C6B60;border-bottom:1px solid #E2E7E1"><span>TIME</span><span>WAYBILL</span><span>METHOD</span><span>COLLECTED BY</span><span>PARK</span><span>AMOUNT</span></div>
+        <sc-if value="{{ noPays }}" hint-placeholder-val="{{ false }}"><div style="padding:24px 20px;color:#5C6B60">No payments yet.</div></sc-if>
+        <sc-for list="{{ pays }}" as="p" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:90px 140px 1.4fr 1fr 1fr 110px;gap:12px;padding:12px 20px;font-size:14px;border-bottom:1px solid #F0F2EF"><span style="color:#5C6B60">{{ p.t }}</span><span style="font-family:'IBM Plex Mono';font-size:13px">{{ p.code }}</span><span>{{ p.method }}</span><span>{{ p.by }}</span><span>{{ p.park }}</span><b style="color:{{ p.c }}">{{ p.amt }}</b></div></sc-for>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{ is.activity }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px;align-items:start">
+        <div style="background:#fff;border-radius:20px;padding:20px;border:1px solid #E2E7E1;display:flex;flex-direction:column"><b style="font-size:17px;margin-bottom:8px">Audit trail</b><sc-for list="{{ allFeed }}" as="a" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:9px 0;border-top:1px solid #F0F2EF"><span style="font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 6px;border-radius:5px;height:fit-content;background:{{ a.rb }};color:{{ a.rf }}">{{ a.role }}</span><span style="font-size:14px;line-height:1.4"><b>{{ a.actor }}</b> {{ a.text }}</span><span style="font-size:12px;color:#8A968D;white-space:nowrap">{{ a.t }}</span></div></sc-for></div>
+        <div style="background:#fff;border-radius:20px;padding:20px;border:1px solid #E2E7E1;display:flex;flex-direction:column"><b style="font-size:17px;margin-bottom:8px">SMS outbox</b><sc-for list="{{ smsList }}" as="m" hint-placeholder-count="6"><div style="padding:10px 0;border-top:1px solid #F0F2EF;display:flex;flex-direction:column;gap:3px"><span style="font-size:12px;color:#5C6B60;font-weight:700">{{ m.to }} · {{ m.t }}</span><span style="font-size:14px;line-height:1.4">{{ m.text }}</span></div></sc-for></div>
+      </div>
+    </sc-if>
+  </main>
+</div>
+
+<sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;background:rgba(23,37,27,.45);display:flex;justify-content:flex-end;z-index:10">
+    <div onClick="{{ stop }}" style="width:100%;max-width:460px;height:100%;background:#fff;padding:26px;display:flex;flex-direction:column;gap:16px;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:800;letter-spacing:.1em;color:#5C6B60">{{ dr.kicker }}</span><button onClick="{{ closeDrawer }}" style="width:36px;height:36px;border-radius:50%;border:0;background:#F4F6F3;font-size:18px;cursor:pointer">×</button></div>
+      <span style="font-size:24px;font-weight:800;line-height:1.2">{{ dr.title }}</span>
+      <sc-if value="{{ dr.chip }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:800;background:{{ dr.cb }};color:{{ dr.cf }}">{{ dr.chip }}</span></sc-if>
+      <sc-if value="{{ dr.qr }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:14px;align-items:center;background:#F4F6F3;border-radius:16px;padding:12px"><img src="{{ dr.qr }}" alt="Waybill QR" style="width:110px;height:110px;background:#fff;border-radius:10px;image-rendering:pixelated"><div style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#5C6B60;line-height:1.45"><b style="color:#17251B">Waybill QR</b>Driver scans this to take custody. Delivery code: <b style="font-family:'IBM Plex Mono';color:#17251B">{{ dr.token }}</b></div></div></sc-if>
+      <div style="background:#F4F6F3;border-radius:16px;padding:4px 16px;display:flex;flex-direction:column"><sc-for list="{{ dr.rows }}" as="r" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #E2E7E1;font-size:14px"><span style="color:#5C6B60">{{ r.k }}</span><b style="text-align:right">{{ r.v }}</b></div></sc-for></div>
+      <sc-if value="{{ dr.photos }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ dr.photos }}" as="ph" hint-placeholder-count="0"><div style="display:flex;flex-direction:column;gap:4px"><img src="{{ ph.src }}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px"><span style="font-size:12px;color:#5C6B60">{{ ph.l }}</span></div></sc-for></div></sc-if>
+      <sc-if value="{{ dr.isInvite }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:8px"><sc-for list="{{ roles }}" as="r" hint-placeholder-count="2"><button onClick="{{ r.pick }}" style="flex:1;height:44px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;border:1.5px solid {{ r.bd }};background:{{ r.bg }};color:{{ r.fg }}">{{ r.l }}</button></sc-for></div>
+        <input value="{{ inv.name }}" onInput="{{ inv.onName }}" placeholder="Full name" style="height:48px;border:1.5px solid #E2E7E1;border-radius:12px;padding:0 14px;font-size:15px;font-weight:600;outline:none">
+        <input value="{{ inv.phone }}" onInput="{{ inv.onPhone }}" placeholder="Phone number" style="height:48px;border:1.5px solid #E2E7E1;border-radius:12px;padding:0 14px;font-size:15px;font-weight:600;outline:none">
+      </sc-if>
+      <sc-if value="{{ dr.assign }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;font-weight:800">Assign driver</span><div style="display:flex;flex-direction:column;gap:6px"><sc-for list="{{ dr.assign }}" as="a" hint-placeholder-count="0"><button onClick="{{ a.go }}" style="text-align:left;height:44px;padding:0 14px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;border:1.5px solid {{ a.bd }};background:{{ a.bg }};color:#17251B">{{ a.l }}</button></sc-for></div></sc-if>
+      <sc-if value="{{ dr.history }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;font-weight:800">History</span><div style="display:flex;flex-direction:column"><sc-for list="{{ dr.history }}" as="h" hint-placeholder-count="0"><div style="display:grid;grid-template-columns:48px 1fr;gap:10px;padding:8px 0;border-top:1px solid #F0F2EF;font-size:13px"><span style="color:#5C6B60;font-weight:600">{{ h.t }}</span><span><b>{{ h.s }}</b> · {{ h.n }}</span></div></sc-for></div></sc-if>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px"><sc-for list="{{ dr.actions }}" as="a" hint-placeholder-count="0"><button onClick="{{ a.go }}" style="height:48px;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;border:1.5px solid {{ a.bd }};background:{{ a.bg }};color:{{ a.fg }}">{{ a.l }}</button></sc-for></div>
+    </div>
+  </div>
+</sc-if>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RB={customer:['#E6F6EC','#075A36'],officer:['#F9D44B','#17251B'],driver:['#3DBE72','#073D24'],admin:['#17251B','#fff'],receiver:['#FDF7D8','#6B5300'],system:['#F4F6F3','#5C6B60']};
+class Component extends DCLogic {
+  state={ready:false,auth:'login',email:'',pw:'',mfa:'',err:'',tab:'overview',filter:'All',q:'',role:'all',drawer:null,invRole:'officer',invName:'',invPhone:'',draft:null,confirmReset:false};
+  componentDidMount(){const boot=()=>{const T=window.TMO;if(!T)return setTimeout(boot,40);this.setState({ready:true,auth:T.getSession('admin')?'in':'login'});this.unsub=T.subscribe(()=>this.forceUpdate());};boot();this._c=setInterval(()=>this.forceUpdate(),20000);}
+  componentWillUnmount(){this.unsub&&this.unsub();clearInterval(this._c);}
+  renderVals(){
+    const T=window.TMO,s=this.state;
+    if(!T||!s.ready)return {notAuthed:true,auth:{login:true},f:{},on:{}};
+    const db=T.db,admin=T.user(db,T.getSession('admin'))||{name:'Ops admin'},an=admin.name;
+    const feedRow=a=>({role:(a.role||'system').toUpperCase(),rb:(RB[a.role]||RB.system)[0],rf:(RB[a.role]||RB.system)[1],actor:a.actor,text:a.text,t:T.ago(a.at)});
+    const ships=db.shipments;
+    const open=ships.filter(x=>!['Closed','Cancelled','Delivered'].includes(x.status));
+    const pays=[].concat(...ships.map(x=>(x.payments||[]).map(p=>Object.assign({code:x.code},p))));
+    const collected=pays.reduce((a,p)=>a+p.amount,0);
+    const delivered=ships.filter(x=>['Delivered','Closed'].includes(x.status));
+    const pending=db.users.filter(u=>u.role==='driver'&&u.status==='pending');
+    const issues=[].concat(...ships.map(x=>(x.issues||[]).filter(i=>i.open).map(i=>({x,i}))));
+    const attn=[].concat(
+      pending.map(u=>({t:'Driver application · '+u.name,s:u.vehicle+' '+u.plate+' · '+T.fmtPhone(u.phone),code:'',c:'#F9D44B',go:()=>this.setState({drawer:{type:'user',id:u.id}})})),
+      issues.map(o=>({t:o.i.t,s:'Reported by '+o.i.by+' · '+T.ago(o.i.at),code:o.x.code,c:'#C8412F',go:()=>this.setState({drawer:{type:'ship',code:o.x.code}})})),
+      ships.filter(x=>x.channel==='online'&&!x.driverId&&['Created','Paid'].includes(x.status)).map(x=>({t:'Online request needs a driver',s:x.pickup+' → '+T.dest(x.dest).s,code:x.code,c:'#F9D44B',go:()=>this.setState({drawer:{type:'ship',code:x.code}})})),
+      ships.filter(x=>x.status==='Accepted'&&!x.driverId).map(x=>({t:'Paid at park, unassigned',s:x.park+' → '+T.dest(x.dest).s,code:x.code,c:'#F9D44B',go:()=>this.setState({drawer:{type:'ship',code:x.code}})})),
+      ships.filter(x=>x.kg&&T.due(x)>0&&!['Cancelled','Closed'].includes(x.status)).map(x=>({t:'Awaiting payment '+T.fmt(T.due(x)),s:x.senderName+' · '+T.fmtPhone(x.senderPhone),code:x.code,c:'#5C6B60',go:()=>this.setState({drawer:{type:'ship',code:x.code}})})));
+    const tabs=[['overview','Overview',attn.length],['shipments','Shipments',open.length],['people','People',pending.length],['pricing','Pricing',''],['payments','Payments',''],['activity','Activity','']];
+    const statuses=['All','Requested','Assigned','Awaiting payment','Ready for pickup','Accepted','In transit','Out for delivery','Delivered','Closed','Cancelled'];
+    const rows=ships.filter(x=>(s.filter==='All'||T.display(x)===s.filter)&&(!s.q||JSON.stringify([x.code,x.senderName,x.receiverName,x.senderPhone,x.receiverPhone,x.dest]).toLowerCase().includes(s.q.toLowerCase()))).map(x=>{const st=T.display(x),c=T.chip(st),dr=x.driverId?T.user(db,x.driverId):null;return {code:x.code,sender:x.senderName,recv:x.receiverName,route:(x.pickup||x.park||'').split(',')[0]+' → '+T.dest(x.dest).s,kg:x.kg||'—',ch:x.channel==='online'?'Online':x.channel==='ride'?'Ride along':'Drop-off',price:T.fmt(x.finalPrice||x.estPrice),driver:dr?dr.name:'—',status:st,bg:c[0],fg:c[1],open:()=>this.setState({drawer:{type:'ship',code:x.code}})};});
+    // people
+    const people=db.users.filter(u=>s.role==='all'||u.role===s.role).map(u=>{const c=T.chip(u.status||'active');const jobs=ships.filter(x=>x.driverId===u.id||x.officerId===u.id||T.norm(x.senderPhone)===T.norm(u.phone));
+      const btns=u.status==='pending'?[{l:'Approve',bg:'#075A36',fg:'#fff',bd:'#075A36',go:()=>T.update(d=>{const x=T.user(d,u.id);x.status='active';T.log(d,an,'admin','approved driver '+x.name+' · '+x.plate);T.sms(d,x.phone,'TMO Driver: You’re approved! Open the app to create your PIN.');})},{l:'Reject',bg:'#fff',fg:'#C8412F',bd:'#E2E7E1',go:()=>T.update(d=>{const x=T.user(d,u.id);x.status='rejected';T.log(d,an,'admin','rejected driver application '+x.name);})}]:[];
+      return {name:u.name,role:u.role,phone:T.fmtPhone(u.phone),detail:u.role==='driver'?(u.vehicle||'')+' '+(u.plate||'')+(u.onDuty?' · on duty':''):u.role==='officer'?(u.park||'')+(u.onShift?' · on shift':''):u.role==='customer'?'TMO Card '+T.fmt(u.card||0):(u.email||''),act:jobs.length+' shipments',st:u.status||'active',bg:c[0],fg:c[1],btns};});
+    // drawer
+    const D=s.drawer;let dr={};
+    const close=()=>this.setState({drawer:null});
+    if(D&&D.type==='ship'){const x=T.ship(db,D.code);if(x){const st=T.display(x),c=T.chip(st),drv=x.driverId?T.user(db,x.driverId):null;
+      const canAssign=!['In transit','Out for delivery','Delivered','Closed','Cancelled'].includes(x.status)&&(x.channel==='online'||x.paidAmount>0);
+      dr={kicker:'SHIPMENT · '+(x.channel==='online'?'ONLINE REQUEST':x.channel==='ride'?'RIDE ALONG':'DROP-OFF'),title:x.code,chip:st,cb:c[0],cf:c[1],qr:T.qr(T.wbPayload(x),4),token:x.podToken,
+        rows:[{k:'Sender',v:x.senderName+' · '+T.fmtPhone(x.senderPhone)},{k:'Receiver',v:x.receiverName+' · '+T.fmtPhone(x.receiverPhone)},{k:'Route',v:(x.pickup||x.park)+' → '+T.dest(x.dest).n},{k:'Package',v:x.category+' · '+x.desc},{k:'Weight',v:x.kg?x.kg+' kg':'Not weighed'},{k:'Declared value',v:T.fmt(x.declaredValue)},{k:'Estimate / final',v:T.fmt(x.estPrice)+' / '+(x.finalPrice?T.fmt(x.finalPrice):'—')},{k:'Paid / due',v:T.fmt(x.paidAmount)+' / '+T.fmt(T.due(x))},{k:'Driver',v:drv?drv.name+' · '+(drv.plate||''):'Unassigned'},{k:'Rating',v:x.rating?x.rating.stars+'★ '+(x.rating.tags||[]).join(', '):'—'}],
+        photos:[x.photo?{src:x.photo,l:'Package at intake/pickup'}:null,x.podPhoto?{src:x.podPhoto,l:'Proof of delivery'}:null].filter(Boolean),
+        assign:canAssign?db.users.filter(u=>u.role==='driver'&&u.status==='active').map(u=>({l:u.name+' · '+(u.plate||'')+(u.onDuty?' · on duty':' · off duty'),bg:x.driverId===u.id?'#E6F6EC':'#fff',bd:x.driverId===u.id?'#075A36':'#E2E7E1',go:()=>T.update(d=>{const y=T.ship(d,x.code);y.driverId=u.id;T.step(d,y,'Assigned',an,'admin','to '+u.name);T.sms(d,u.phone,'TMO Driver: New job '+y.code+' assigned by Operations.');})})):null,
+        history:x.history.slice().reverse().map(h=>({t:T.time(h.at),s:h.status,n:(h.by||'')+(h.note?' · '+h.note:'')})),
+        actions:[].concat((x.issues||[]).filter(i=>i.open).map(i=>({l:'Resolve: '+i.t,bg:'#075A36',fg:'#fff',bd:'#075A36',go:()=>T.update(d=>{const y=T.ship(d,x.code);const z=y.issues.find(k=>k.id===i.id);z.open=false;T.note(d,y,'Issue resolved',an,'admin',i.t);})})),
+          !['Delivered','Closed','Cancelled'].includes(x.status)?[{l:'Cancel shipment',bg:'#fff',fg:'#C8412F',bd:'#E2E7E1',go:()=>T.update(d=>{const y=T.ship(d,x.code);T.step(d,y,'Cancelled',an,'admin','Cancelled by Operations');})}]:[],
+          x.status==='Delivered'?[{l:'Close shipment',bg:'#17251B',fg:'#fff',bd:'#17251B',go:()=>T.update(d=>{const y=T.ship(d,x.code);T.step(d,y,'Closed',an,'admin','Closed after proof of delivery');})}]:[])};}}
+    if(D&&D.type==='user'){const u=T.user(db,D.id);if(u){const c=T.chip(u.status);dr={kicker:u.role.toUpperCase()+(u.status==='pending'?' APPLICATION':''),title:u.name,chip:u.status,cb:c[0],cf:c[1],qr:'',rows:[{k:'Phone',v:T.fmtPhone(u.phone)},{k:'Vehicle',v:(u.vehicle||'—')+' · '+(u.plate||'')},{k:'Documents',v:u.docs?'Licence, registration, insurance, photo ✓':'—'},{k:'Applied',v:T.ago(u.createdAt)}],
+      actions:u.status==='pending'?[{l:'Approve & activate',bg:'#075A36',fg:'#fff',bd:'#075A36',go:()=>{T.update(d=>{const x=T.user(d,u.id);x.status='active';T.log(d,an,'admin','approved driver '+x.name+' · '+x.plate);T.sms(d,x.phone,'TMO Driver: You’re approved! Open the app to create your PIN.');});close();}},{l:'Reject',bg:'#fff',fg:'#C8412F',bd:'#E2E7E1',go:()=>{T.update(d=>{const x=T.user(d,u.id);x.status='rejected';T.log(d,an,'admin','rejected '+x.name);});close();}}]:[]};}}
+    if(D&&D.type==='invite'){const ok=s.invName.trim()&&T.norm(s.invPhone).length===11;dr={kicker:'INVITE STAFF',title:D.done?'Invite sent':'Invite an officer or driver',rows:D.done?[{k:'Name',v:D.done.name},{k:'Phone',v:T.fmtPhone(D.done.phone)},{k:'Invite code',v:D.done.code}]:[{k:'Park',v:'CMS Park, Obalende'}],isInvite:!D.done,
+      actions:D.done?[{l:'Done',bg:'#075A36',fg:'#fff',bd:'#075A36',go:close}]:[{l:'Send invite by SMS',bg:ok?'#075A36':'#E2E7E1',fg:ok?'#fff':'#8A968D',bd:ok?'#075A36':'#E2E7E1',go:()=>{if(!ok)return;const code='TMO'+T.rnd(3);T.update(d=>{d.users.push({id:T.uid('u'),role:s.invRole,name:s.invName.trim(),phone:T.norm(s.invPhone),park:'CMS Park, Obalende',status:s.invRole==='driver'?'pending':'invited',invite:code,createdAt:Date.now()});T.log(d,an,'admin','invited '+s.invRole+' '+s.invName.trim());T.sms(d,s.invPhone,'TMO: You’ve been invited as a '+s.invRole+'. Invite code '+code+'. Open the TMO '+(s.invRole==='officer'?'Officer':'Driver')+' app to activate.');});this.setState({drawer:{type:'invite',done:{name:s.invName,phone:s.invPhone,code}},invName:'',invPhone:''});}}]};}
+    // pricing
+    const r=s.draft||db.rates;
+    const setR=(path,v)=>{const n=JSON.parse(JSON.stringify(r));if(path[0]==='bands')n.bands[path[1]]=v;else if(path[0]==='zones')n.zones[path[1]]=v;else n[path[0]]=v;this.setState({draft:n});};
+    const pvDb={rates:Object.assign({},r,{bands:r.bands.map(Number),zones:{A:+r.zones.A,B:+r.zones.B,C:+r.zones.C}})};
+    const pv=T.price(pvDb,{kg:4,dest:'Oshodi Interchange',value:50000});
+    const byM={};pays.forEach(p=>{const k=p.method.split(' ·')[0];byM[k]=(byM[k]||0)+p.amount;});
+    return {
+      notAuthed:s.auth!=='in',authed:s.auth==='in',auth:{login:s.auth==='login',mfa:s.auth==='mfa'},err:s.err,showLinks:!T.embed,
+      f:{email:s.email,pw:s.pw,mfa:s.mfa},on:{email:e=>this.setState({email:e.target.value}),pw:e=>this.setState({pw:e.target.value}),mfa:e=>this.setState({mfa:e.target.value.replace(/\D/g,'').slice(0,6)})},
+      submitLogin:()=>{if(!s.email.trim())return this.setState({err:'Enter any email'});this.setState({auth:'mfa',err:''});},
+      mfaCta:{bg:s.mfa.length===6?'#075A36':'#E2E7E1',fg:s.mfa.length===6?'#fff':'#8A968D'},
+      submitMfa:()=>{if(s.mfa.length!==6)return;let id;T.update(d=>{let u=d.users.find(x=>x.role==='admin'&&x.email===s.email.trim());if(!u){u={id:T.uid('u'),role:'admin',name:s.email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),email:s.email.trim(),phone:'',status:'active',createdAt:Date.now()};d.users.push(u);}id=u.id;T.log(d,u.name,'admin','signed in to Admin');});T.setSession('admin',id);this.setState({auth:'in',mfa:''});},
+      who:'Signed in as '+an,signOut:()=>{T.setSession('admin',null);this.setState({auth:'login'});},
+      resetLabel:s.confirmReset?'Tap again to wipe all test data':'Reset test data',resetAll:()=>{if(!s.confirmReset){this.setState({confirmReset:true});setTimeout(()=>this.setState({confirmReset:false}),4000);return;}['customer','officer','driver','track'].forEach(k=>T.setSession(k,null));T.reset();this.setState({confirmReset:false});},
+      nav:tabs.map(t=>({l:t[1],badge:t[2]===''||t[2]===0?'':t[2],bb:t[2]?'#F9D44B':'transparent',go:()=>this.setState({tab:t[0]}),bg:t[0]===s.tab?'#075A36':'transparent',fg:t[0]===s.tab?'#fff':'#C9D3CB'})),
+      title:tabs.find(t=>t[0]===s.tab)[1],is:Object.fromEntries(tabs.map(t=>[t[0],s.tab===t[0]])),
+      kpis:[{l:'Shipments',v:ships.length,s:ships.filter(x=>x.channel==='online').length+' online · '+ships.filter(x=>x.channel!=='online').length+' park'},{l:'On the move',v:open.length,s:ships.filter(x=>['In transit','Out for delivery'].includes(x.status)).length+' in transit'},{l:'Delivered',v:delivered.length,s:ships.filter(x=>x.status==='Closed').length+' closed with POD'},{l:'Auto-priced',v:ships.length?'100%':'—',s:'No manual overrides'},{l:'Collected',v:T.fmt(collected),s:pays.length+' payments'},{l:'Drivers on duty',v:db.users.filter(u=>u.role==='driver'&&u.onDuty).length,s:pending.length+' pending approval'}],
+      feed:db.activity.slice(0,12).map(feedRow),allFeed:db.activity.slice(0,150).map(feedRow),toActivity:()=>this.setState({tab:'activity'}),
+      attn,noAttn:attn.length===0,attnCount:attn.length,attnBg:attn.length?'#FBE9E6':'#E6F6EC',attnFg:attn.length?'#C8412F':'#075A36',
+      filters:statuses.map(f=>({l:f,go:()=>this.setState({filter:f}),bg:f===s.filter?'#17251B':'#fff',fg:f===s.filter?'#fff':'#17251B',bd:f===s.filter?'#17251B':'#E2E7E1'})),
+      q:s.q,onQ:e=>this.setState({q:e.target.value}),rows,noRows:rows.length===0,
+      roleFilters:[['all','All'],['customer','Customers'],['officer','Officers'],['driver','Drivers'],['admin','Admins']].map(f=>({l:f[1],go:()=>this.setState({role:f[0]}),bg:f[0]===s.role?'#17251B':'#fff',fg:f[0]===s.role?'#fff':'#17251B',bd:f[0]===s.role?'#17251B':'#E2E7E1'})),
+      people,openInvite:()=>this.setState({drawer:{type:'invite'}}),
+      roles:['officer','driver'].map(x=>({l:x[0].toUpperCase()+x.slice(1),pick:()=>this.setState({invRole:x}),bg:s.invRole===x?'#075A36':'#fff',fg:s.invRole===x?'#fff':'#17251B',bd:s.invRole===x?'#075A36':'#E2E7E1'})),
+      inv:{name:s.invName,phone:s.invPhone,onName:e=>this.setState({invName:e.target.value}),onPhone:e=>this.setState({invPhone:e.target.value})},
+      drawerOpen:!!D&&!!dr.title,dr,closeDrawer:close,stop:e=>e.stopPropagation(),
+      rateRows:[{l:'Base charge',u:'₦',v:r.base,on:e=>setR(['base'],e.target.value)},{l:'Service charge',u:'₦',v:r.svc,on:e=>setR(['svc'],e.target.value)},{l:'Insurance (% of declared)',u:'%',v:r.ins,on:e=>setR(['ins'],e.target.value)},{l:'VAT',u:'%',v:r.vat,on:e=>setR(['vat'],e.target.value)}]
+        .concat(T.BANDS.map((b,i)=>({l:'Band · '+b.l,u:'₦',v:r.bands[i],on:e=>setR(['bands',i],e.target.value)})))
+        .concat(['A','B','C'].map(z=>({l:'Zone '+z+(z==='A'?' · ≤10 km':z==='B'?' · 10–25 km':' · 25 km+'),u:'₦',v:r.zones[z],on:e=>setR(['zones',z],e.target.value)}))),
+      pv:{lines:pv.lines,total:T.fmt(pv.total)},publishLabel:s.draft?'Publish rates to all apps':'Rates are live',
+      publish:()=>{if(!s.draft)return;T.update(d=>{d.rates=pvDb.rates;d.rates.base=+r.base;d.rates.svc=+r.svc;d.rates.ins=+r.ins;d.rates.vat=+r.vat;T.log(d,an,'admin','published new rates');});this.setState({draft:null});},
+      payKpis:[{l:'Total collected',v:T.fmt(collected)}].concat(Object.keys(byM).map(k=>({l:k,v:T.fmt(byM[k])}))),
+      pays:pays.sort((a,b)=>b.at-a.at).map(p=>({t:T.time(p.at),code:p.code,method:p.method,by:p.by,park:p.park||'',amt:T.fmt(p.amount),c:p.amount<0?'#C8412F':'#17251B'})),noPays:pays.length===0,
+      smsList:db.sms.slice(0,80).map(m=>{const u=T.userByPhone(db,m.to);return {to:(u?u.name+' · ':'')+T.fmtPhone(m.to),t:T.ago(m.at),text:m.text};})
+    };
+  }
+}
+</script>
+</body>
+</html>
