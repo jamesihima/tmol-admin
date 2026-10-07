@@ -34,7 +34,7 @@
         <span style="font-size:13px;color:#8A968D;text-align:center">Testing: any email and password work.</span>
       </sc-if>
       <sc-if value="{{ auth.mfa }}" hint-placeholder-val="{{ false }}">
-        <span style="font-size:30px;font-weight:800">Two-step verification</span><span style="font-size:15px;color:#5C6B60">Enter the 6-digit code from your authenticator. Any 6 digits work in testing.</span>
+        <span style="font-size:30px;font-weight:800">Two-step verification</span><span style="font-size:15px;color:#5C6B60">Your code is 123456.</span>
         <input value="{{ f.mfa }}" onInput="{{ on.mfa }}" placeholder="000000" style="height:60px;border:1.5px solid #E2E7E1;border-radius:14px;padding:0 16px;font-size:28px;font-weight:700;letter-spacing:.4em;font-family:'IBM Plex Mono';outline:none;text-align:center">
         <button onClick="{{ submitMfa }}" style="height:52px;border:0;border-radius:14px;font-weight:800;font-size:16px;cursor:pointer;background:{{ mfaCta.bg }};color:{{ mfaCta.fg }}">Verify</button>
       </sc-if>
@@ -144,7 +144,7 @@
 <script type="text/x-dc" data-dc-script>
 const RB={customer:['#E6F6EC','#075A36'],officer:['#F9D44B','#17251B'],driver:['#3DBE72','#073D24'],admin:['#17251B','#fff'],receiver:['#FDF7D8','#6B5300'],system:['#F4F6F3','#5C6B60']};
 class Component extends DCLogic {
-  state={ready:false,auth:'login',email:'',pw:'',mfa:'',err:'',tab:'overview',filter:'All',q:'',role:'all',drawer:null,invRole:'officer',invName:'',invPhone:'',draft:null,confirmReset:false};
+  state={ready:false,auth:'login',email:'kemi.a@tmo.ng',pw:'1234',mfa:'',err:'',tab:'overview',filter:'All',q:'',role:'all',drawer:null,invRole:'officer',invName:'',invPhone:'',draft:null,confirmReset:false};
   componentDidMount(){const boot=()=>{const T=window.TMO;if(!T)return setTimeout(boot,40);this.setState({ready:true,auth:T.getSession('admin')?'in':'login'});this.unsub=T.subscribe(()=>this.forceUpdate());};boot();this._c=setInterval(()=>this.forceUpdate(),20000);}
   componentWillUnmount(){this.unsub&&this.unsub();clearInterval(this._c);}
   renderVals(){
@@ -200,7 +200,7 @@ class Component extends DCLogic {
       f:{email:s.email,pw:s.pw,mfa:s.mfa},on:{email:e=>this.setState({email:e.target.value}),pw:e=>this.setState({pw:e.target.value}),mfa:e=>this.setState({mfa:e.target.value.replace(/\D/g,'').slice(0,6)})},
       submitLogin:()=>{if(!s.email.trim())return this.setState({err:'Enter any email'});this.setState({auth:'mfa',err:''});},
       mfaCta:{bg:s.mfa.length===6?'#075A36':'#E2E7E1',fg:s.mfa.length===6?'#fff':'#8A968D'},
-      submitMfa:()=>{if(s.mfa.length!==6)return;let id;T.update(d=>{let u=d.users.find(x=>x.role==='admin'&&x.email===s.email.trim());if(!u){u={id:T.uid('u'),role:'admin',name:s.email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),email:s.email.trim(),phone:'',status:'active',createdAt:Date.now()};d.users.push(u);}id=u.id;T.log(d,u.name,'admin','signed in to Admin');});T.setSession('admin',id);this.setState({auth:'in',mfa:''});},
+      submitMfa:()=>{if(s.mfa!==T.CODE)return this.setState({mfa:'',err:'Use code 123456'});let id;T.update(d=>{let u=d.users.find(x=>x.role==='admin'&&x.email===s.email.trim());if(!u){u={id:T.uid('u'),role:'admin',name:s.email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),email:s.email.trim(),phone:'',status:'active',createdAt:Date.now()};d.users.push(u);}id=u.id;T.log(d,u.name,'admin','signed in to Admin');});T.setSession('admin',id);this.setState({auth:'in',mfa:''});},
       who:'Signed in as '+an,signOut:()=>{T.setSession('admin',null);this.setState({auth:'login'});},
       resetLabel:s.confirmReset?'Tap again to wipe all test data':'Reset test data',resetAll:()=>{if(!s.confirmReset){this.setState({confirmReset:true});setTimeout(()=>this.setState({confirmReset:false}),4000);return;}['customer','officer','driver','track'].forEach(k=>T.setSession(k,null));T.reset();this.setState({confirmReset:false});},
       nav:tabs.map(t=>({l:t[1],badge:t[2]===''||t[2]===0?'':t[2],bb:t[2]?'#F9D44B':'transparent',go:()=>this.setState({tab:t[0]}),bg:t[0]===s.tab?'#075A36':'transparent',fg:t[0]===s.tab?'#fff':'#C9D3CB'})),
